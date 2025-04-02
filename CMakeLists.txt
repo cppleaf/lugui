@@ -1,3 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
-project(luigi)
-add_executable(luigi src/luigi.cpp)
+project(lugui)
+
+find_package(SDL3 REQUIRED)
+
+add_executable(lugui src/lugui.cpp)
+target_link_libraries(lugui PRIVATE SDL3::SDL3)
