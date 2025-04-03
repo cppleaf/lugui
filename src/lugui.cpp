@@ -1,11 +1,24 @@
 #include "SDL3/SDL_render.h"
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_init.h>
+#include <filesystem>
 #include <vector>
 
-struct Window {
-  SDL_Renderer *renderer;
-  SDL_Window *window;
+struct Drawable {
+  virtual void draw(SDL_Renderer *renderer) = 0;
+  virtual ~Drawable() = default;
+};
+
+class Window {
+public:
+  ~Window() {
+    if (renderer)
+      SDL_DestroyRenderer(renderer);
+    if (window)
+      SDL_DestroyWindow(window);
+
+    SDL_Quit();
+  }
 
   bool init() {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
@@ -18,71 +31,92 @@ struct Window {
     return true;
   }
 
+  void add(Drawable *drawable) { drawables.push_back(drawable); }
+
   void clear() {
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderClear(renderer);
   }
 
-  void draw() { SDL_RenderPresent(renderer); }
+  void draw() {
+    SDL_Event e;
+    bool quit = false;
+    while (!quit) {
+      while (SDL_PollEvent(&e)) {
+        if (e.type == SDL_EVENT_QUIT) {
+          quit = true;
+        }
 
-  ~Window() {
-    if (renderer)
-      SDL_DestroyRenderer(renderer);
-    if (window)
-      SDL_DestroyWindow(window);
-    SDL_Quit();
+        clear();
+
+        for (Drawable *drawable : drawables) {
+          drawable->draw(renderer);
+        }
+
+        SDL_RenderPresent(renderer);
+      }
+    }
   }
+
+private:
+  SDL_Renderer *renderer;
+  SDL_Window *window;
+
+  std::vector<Drawable *> drawables;
 };
 
 struct Point {
   double x, y;
 };
 
-class Line {
+class Line : public Drawable {
 public:
-  void addPoint(Point *point) { points.push_back(point); }
+  void addPoint(double x, double y) { points.push_back({x, y}); }
+  void addPoint(Point point) { points.push_back(point); }
 
-  void draw(Window *window) {
+  void draw(SDL_Renderer *renderer) {
     for (int i = 0; i < points.size() - 1; ++i) {
-      Point *p1 = points[i];
-      Point *p2 = points[i + 1];
+      Point p1 = points[i];
+      Point p2 = points[i + 1];
 
-      SDL_RenderLine(window->renderer, p1->x, p1->y, p2->x, p2->y);
+      SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+      SDL_RenderLine(renderer, p1.x, p1.y, p2.x, p2.y);
     }
   }
 
 private:
-  std::vector<Point *> points;
+  std::vector<Point> points;
+};
+
+class Rectangle : public Line {
+public:
+  Rectangle(double x, double y, double width, double height) {
+    addPoint(x, y);
+    addPoint(x + width, y);
+    addPoint(x + width, y + height);
+    addPoint(x, y + height);
+    addPoint(x, y);
+  }
 };
 
 int main() {
   Window window;
-  if (!window.init()) {
-    return 1;
-  }
+  window.init();
 
   Point p1{50, 100};
   Point p2{100, 100};
   Point p3{0, 0};
 
   Line line;
-  line.addPoint(&p1);
-  line.addPoint(&p2);
-  line.addPoint(&p3);
+  line.addPoint(p1);
+  line.addPoint(p2);
+  line.addPoint(p3);
 
-  SDL_Event e;
-  bool quit = false;
-  while (quit == false) {
-    while (SDL_PollEvent(&e)) {
-      if (e.type == SDL_EVENT_QUIT)
-        quit = true;
+  Rectangle rect(250, 100, 100, 300);
 
-      window.clear();
-      SDL_SetRenderDrawColor(window.renderer, 0, 0, 0, 255);
-      line.draw(&window);
-      window.draw();
-    }
-  }
+  window.add(&line);
+  window.add(&rect);
+  window.draw();
 
   return 0;
 }
