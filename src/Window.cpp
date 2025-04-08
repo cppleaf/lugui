@@ -20,19 +20,35 @@ bool Window::init() {
 }
 
 void Window::add(Drawable *drawable) { drawables.push_back(drawable); }
+void Window::add(Clickable *clickable) {
+  drawables.push_back(clickable);
+  clickables.push_back(clickable);
+}
 
 void Window::clear() {
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
   SDL_RenderClear(renderer);
 }
 
-void Window::draw() {
+void Window::run() {
   SDL_Event e;
   bool quit = false;
   while (!quit) {
     while (SDL_PollEvent(&e)) {
-      if (e.type == SDL_EVENT_QUIT) {
+      switch (e.type) {
+      case SDL_EVENT_QUIT: {
         quit = true;
+        break;
+      }
+      case SDL_EVENT_MOUSE_BUTTON_DOWN: {
+        for (Clickable *clickable : clickables) {
+          if (clickable->contains(e.button.x, e.button.y)) {
+            clickable->onClick();
+          }
+          break;
+        }
+        break;
+      }
       }
 
       clear();
