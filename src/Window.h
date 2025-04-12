@@ -11,7 +11,7 @@ public:
   bool init();
 
   void add(Drawable *drawable);
-  void add(Clickable *clickable);
+  void add(EventListener *listener);
 
   void clear();
 
@@ -22,5 +22,5 @@ private:
   SDL_Window *window;
 
   std::vector<Drawable *> drawables;
-  std::vector<Clickable *> clickables;
+  std::vector<EventListener *> listeners;
 };

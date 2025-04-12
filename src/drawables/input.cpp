@@ -1,9 +1,14 @@
 #include "input.h"
-#include <iostream>
 
-Button::Button(Rectangle base) : base(base) {}
+Button::Button(Rectangle base, std::function<void()> callback)
+    : base(base), callback(callback) {}
 
 void Button::draw(SDL_Renderer *renderer) { base.draw(renderer); }
 
-bool Button::contains(double x, double y) { return base.contains(x, y); }
-void Button::onClick() { std::cout << "Button clicked" << '\n'; }
+void Button::onEvent(SDL_Event e) {
+  if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+    if (base.contains(e.button.x, e.button.y)) {
+      callback();
+    }
+  }
+}

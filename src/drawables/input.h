@@ -1,21 +1,22 @@
 #include "primitives.h"
 #include "shapes.h"
+#include <functional>
 
-struct Clickable : public Drawable {
-  virtual bool contains(double x, double y) = 0;
-  virtual void onClick() = 0;
+struct EventListener : public Drawable {
+  virtual void onEvent(SDL_Event e) = 0;
 
-  virtual ~Clickable() = default;
+  virtual ~EventListener() = default;
 };
 
-class Button : public Clickable {
+class Button : public EventListener {
 public:
-  Button(Rectangle base);
+  Button(Rectangle base, std::function<void()> callback);
   void draw(SDL_Renderer *renderer) override;
 
-  bool contains(double x, double y) override;
-  void onClick() override;
+  void onEvent(SDL_Event e) override;
 
 private:
   Rectangle base;
+
+  std::function<void()> callback;
 };
