@@ -39,7 +39,9 @@ void Window::run() {
         quit = true;
       } else {
         for (EventListener *listener : listeners) {
-          listener->onEvent(e);
+          if (listener->onEvent(e, window)) {
+            break;
+          };
         }
       }
 
